@@ -1,0 +1,14 @@
+# Local tooling and dependencies
+node_modules/
+.codex-video-tools/
+
+# Local release and QA artifacts
+*.zip
+*.log
+store-assets/qa-*.png
+
+# Local tool/editor files
+.claude/settings.local.json
+.vscode/
+.DS_Store
+Thumbs.db
