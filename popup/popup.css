@@ -136,6 +136,12 @@ footer {
 }
 #total { font-size: 11.5px; color: var(--text-3); }
 .foot-actions { display: flex; align-items: center; gap: 2px; }
+.lang-mini {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 28px; min-width: 30px; padding: 0 6px; border-radius: 7px;
+  color: var(--text-3); font-size: 10.5px; font-weight: 750; letter-spacing: .05em;
+}
+.lang-mini:hover { background: var(--surface-2); color: var(--accent); }
 .icon-mini {
   display: inline-flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; border-radius: 7px; color: var(--text-3);

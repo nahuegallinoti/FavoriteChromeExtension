@@ -1,0 +1,7 @@
+{
+  "extensionName": { "message": "Mark My Tabs" },
+  "extensionDescription": { "message": "A fast, elegant bookmark manager: search, organize, drag, and clean up your bookmarks." },
+  "actionTitle": { "message": "Mark My Tabs" },
+  "openManagerCommand": { "message": "Open the bookmark manager" },
+  "saveCurrentCommand": { "message": "Save or remove the current tab from bookmarks" }
+}

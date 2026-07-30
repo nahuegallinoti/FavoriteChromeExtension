@@ -3,6 +3,7 @@ import {
   tokenize, searchScore, highlight, faviconEl, loadPref, savePref,
   bm, openUrl, IS_EXT,
 } from '../common/utils.js';
+import { applyI18n, getLang, languageButtonText, languageButtonTitle, setLang, tr } from '../common/i18n.js';
 
 const searchInput = $('#search');
 const resultsBox = $('#results');
@@ -21,7 +22,7 @@ let activeId = null;          // fila resaltada para navegación con teclado
 function pathLabel(node) {
   const parts = [];
   let p = node.parentId ? nodeById.get(node.parentId) : null;
-  while (p && p.parentId) { parts.unshift(p.title || 'Sin nombre'); p = nodeById.get(p.parentId); }
+  while (p && p.parentId) { parts.unshift(p.title || tr('Untitled', 'Sin nombre')); p = nodeById.get(p.parentId); }
   return parts.join(' / ');
 }
 
@@ -39,7 +40,7 @@ async function loadData() {
     return b;
   })(root);
   rootFolders = root.children || [];
-  $('#total').textContent = `${fmtNum(allBookmarks.length)} ${allBookmarks.length === 1 ? 'marcador' : 'marcadores'}`;
+  $('#total').textContent = `${fmtNum(allBookmarks.length)} ${allBookmarks.length === 1 ? tr('bookmark', 'marcador') : tr('bookmarks', 'marcadores')}`;
 }
 
 // ---------- árbol de carpetas ----------
@@ -48,11 +49,11 @@ function folderBlock(folder) {
   const cnt = countsById.get(folder.id) || 0;
   const row = el('button', {
     class: 'row tree', dataset: { id: folder.id, folder: '1' },
-    title: folder.title || 'Sin nombre',
+    title: folder.title || tr('Untitled', 'Sin nombre'),
   },
     el('span', { class: `twist${open ? ' open' : ''}`, html: svg('chevron', 12) }),
     el('span', { class: 'icn folder-icn', html: svg(open ? 'folderOpen' : 'folder', 15) }),
-    el('span', { class: 'tlabel', text: folder.title || 'Sin nombre' }),
+    el('span', { class: 'tlabel', text: folder.title || tr('Untitled', 'Sin nombre') }),
     el('span', { class: 'count', text: cnt ? fmtNum(cnt) : '' }));
   row.addEventListener('click', () => toggleFolder(folder.id));
   const wrap = el('div', { class: 'node' }, row);
@@ -60,7 +61,7 @@ function folderBlock(folder) {
     const kids = el('div', { class: 'kids' });
     const children = folder.children || [];
     if (!children.length) {
-      kids.append(el('div', { class: 'empty-row', text: 'Carpeta vacía' }));
+      kids.append(el('div', { class: 'empty-row', text: tr('Empty folder', 'Carpeta vacía') }));
     }
     for (const c of children) kids.append(c.url ? bookmarkRow(c) : folderBlock(c));
     wrap.append(kids);
@@ -103,7 +104,7 @@ function render() {
     if (expanded.size === 0) for (const r of rootFolders) expanded.add(r.id);
     const hasAnything = allBookmarks.length || rootFolders.some((f) => f.children?.length);
     if (!hasAnything) {
-      resultsBox.append(el('div', { class: 'empty-msg', text: 'Todavía no tienes marcadores guardados.' }));
+      resultsBox.append(el('div', { class: 'empty-msg', text: tr('You do not have any saved bookmarks yet.', 'Todavía no tienes marcadores guardados.') }));
     } else {
       for (const r of rootFolders) resultsBox.append(folderBlock(r));
     }
@@ -122,7 +123,7 @@ function render() {
   scored.sort((a, b) => b[0] - a[0] || (b[1].dateAdded || 0) - (a[1].dateAdded || 0));
   const top = scored.slice(0, 12).map((r) => r[1]);
   if (!top.length) {
-    resultsBox.append(el('div', { class: 'empty-msg', text: `Sin resultados para “${q}”` }));
+    resultsBox.append(el('div', { class: 'empty-msg', text: tr(`No results for “${q}”`, `Sin resultados para “${q}”`) }));
     applyActive();
     return;
   }
@@ -130,7 +131,7 @@ function render() {
   if (scored.length > top.length) {
     const more = el('button', { class: 'row', dataset: { id: '__more' } },
       el('span', { class: 'icn folder-icn', html: svg('search', 15) }),
-      el('span', { class: 'meta' }, el('span', { class: 'title', text: `Ver los ${fmtNum(scored.length)} resultados` })),
+      el('span', { class: 'meta' }, el('span', { class: 'title', text: tr(`View all ${fmtNum(scored.length)} results`, `Ver los ${fmtNum(scored.length)} resultados`) })),
       el('span', { class: 'icn go', html: svg('arrowUpRight', 14) }));
     more.addEventListener('click', () => openManager(`?q=${encodeURIComponent(q)}`));
     resultsBox.append(more);
@@ -143,8 +144,8 @@ function resultRow(node, tokens) {
   const row = el('button', { class: 'row', dataset: { id: node.id } },
     isFolder ? el('span', { class: 'icn folder-icn', html: svg('folder', 16) }) : faviconEl(node.url, 18),
     el('span', { class: 'meta' },
-      el('span', { class: 'title', html: highlight(node.title || (isFolder ? 'Sin nombre' : domainOf(node.url)), tokens) }),
-      el('span', { class: 'sub', text: isFolder ? pathLabel(node) || 'Carpeta' : (pathLabel(node) ? `${pathLabel(node)} · ` : '') + domainOf(node.url) })),
+      el('span', { class: 'title', html: highlight(node.title || (isFolder ? tr('Untitled', 'Sin nombre') : domainOf(node.url)), tokens) }),
+      el('span', { class: 'sub', text: isFolder ? pathLabel(node) || tr('Folder', 'Carpeta') : (pathLabel(node) ? `${pathLabel(node)} · ` : '') + domainOf(node.url) })),
     el('span', { class: 'icn go', html: svg(isFolder ? 'chevron' : 'arrowUpRight', 14) }));
   row.addEventListener('click', () => openNode(node));
   return row;
@@ -230,7 +231,7 @@ searchInput.addEventListener('input', debounce(() => { activeId = null; render()
 // ---------- página actual ----------
 async function loadCurrentTab() {
   if (!IS_EXT || !chrome.tabs?.query) {
-    currentTab = { title: 'Página de ejemplo (modo desarrollo)', url: 'https://ejemplo.dev/articulo' };
+    currentTab = { title: tr('Example page (development mode)', 'Página de ejemplo (modo desarrollo)'), url: 'https://example.dev/article' };
   } else {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -249,7 +250,10 @@ function renderCurrent() {
   currentBox.innerHTML = '';
   currentBox.hidden = !!searchInput.value.trim();
   const existing = findByUrl(currentTab.url);
-  const star = el('button', { class: `star${existing ? ' saved' : ''}`, title: existing ? 'Quitar de marcadores' : 'Guardar esta página' });
+  const star = el('button', {
+    class: `star${existing ? ' saved' : ''}`,
+    title: existing ? tr('Remove from bookmarks', 'Quitar de marcadores') : tr('Save this page', 'Guardar esta página'),
+  });
   star.innerHTML = existing
     ? `<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2Z"/></svg>`
     : svg('bookmark', 19);
@@ -270,17 +274,25 @@ function renderCurrent() {
     faviconEl(currentTab.url, 20),
     el('span', { class: 'meta' },
       el('span', { class: 'title', text: currentTab.title }),
-      el('span', { class: 'sub', text: existing ? `Guardado ${timeAgo(existing.dateAdded)}` : domainOf(currentTab.url) })),
+      el('span', { class: 'sub', text: existing ? tr(`Saved ${timeAgo(existing.dateAdded)}`, `Guardado ${timeAgo(existing.dateAdded)}`) : domainOf(currentTab.url) })),
     star,
   );
 }
 
 // ---------- init ----------
 async function init() {
+  applyI18n();
   $('#searchBar .search-icn').innerHTML = svg('search', 16);
   const mb = $('#btnManager');
-  mb.innerHTML = `${svg('grid', 14)}<span>Administrador</span>`;
+  mb.innerHTML = `${svg('grid', 14)}<span>${tr('Manager', 'Administrador')}</span>`;
   mb.addEventListener('click', () => openManager());
+  const lb = $('#btnLang');
+  lb.textContent = languageButtonText();
+  lb.title = languageButtonTitle();
+  lb.addEventListener('click', () => {
+    setLang(getLang() === 'en' ? 'es' : 'en');
+    location.reload();
+  });
   const cb = $('#btnCollapse');
   cb.innerHTML = svg('collapse', 15);
   cb.addEventListener('click', () => {

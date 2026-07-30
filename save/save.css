@@ -99,5 +99,9 @@ button:active { transform: scale(.97); }
 button.primary { background: var(--accent); border-color: transparent; color: #fff; font-weight: 600; }
 button.primary:hover { background: var(--accent-hover); }
 :root[data-theme="dark"] button.primary { color: #10122b; }
+.lang-save {
+  min-width: 38px; padding: 0 9px;
+  color: var(--text-2); font-size: 10.5px; font-weight: 750; letter-spacing: .05em;
+}
 #btnRemove { border-color: transparent; background: transparent; color: var(--danger); font-weight: 550; }
 #btnRemove:hover { background: var(--danger-soft); }

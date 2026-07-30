@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Marcadores Pro</title>
+  <title>Mark My Tabs</title>
   <script src="../common/theme.js"></script>
   <link rel="stylesheet" href="manager.css">
 </head>
@@ -15,14 +15,14 @@
         <span class="brand-logo" aria-hidden="true">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2Z"/></svg>
         </span>
-        <span class="brand-name">Marcadores <b>Pro</b></span>
+        <span class="brand-name">Mark My <b>Tabs</b></span>
       </div>
 
-      <nav id="views" aria-label="Vistas"></nav>
+      <nav id="views" aria-label="Views" data-i18n-aria-label="views"></nav>
 
       <div class="tree-head">
-        <span>Carpetas</span>
-        <button id="btnTreeNewFolder" class="icon-btn sm" title="Nueva carpeta"></button>
+        <span data-i18n="folders">Folders</span>
+        <button id="btnTreeNewFolder" class="icon-btn sm" title="New folder" data-i18n-title="newFolder"></button>
       </div>
       <div id="tree" role="tree"></div>
 
@@ -31,17 +31,18 @@
 
     <main id="main">
       <header id="topbar">
-        <button id="btnSidebar" class="icon-btn" title="Mostrar carpetas"></button>
+        <button id="btnSidebar" class="icon-btn" title="Show folders" data-i18n-title="showFolders"></button>
         <div id="searchWrap">
           <span class="search-icn"></span>
-          <input id="search" type="text" placeholder="Buscar en tus marcadores…" autocomplete="off" spellcheck="false">
-          <button id="btnClearSearch" class="icon-btn sm" title="Limpiar (Esc)" hidden></button>
+          <input id="search" type="text" placeholder="Search your bookmarks…" data-i18n-placeholder="searchBookmarks" autocomplete="off" spellcheck="false">
+          <button id="btnClearSearch" class="icon-btn sm" title="Clear (Esc)" data-i18n-title="clearSearch" hidden></button>
           <span class="kbd-hint"><kbd>Ctrl</kbd><kbd>K</kbd></span>
         </div>
         <div class="tools">
-          <button id="btnSort" class="btn ghost" title="Ordenar"></button>
+          <button id="btnSort" class="btn ghost" title="Sort" data-i18n-title="sort"></button>
           <button id="btnLayout" class="icon-btn" title="Cambiar vista"></button>
           <button id="btnTheme" class="icon-btn" title="Cambiar tema"></button>
+          <button id="btnLang" class="lang-btn" type="button"></button>
           <button id="btnAdd" class="btn primary"></button>
         </div>
       </header>

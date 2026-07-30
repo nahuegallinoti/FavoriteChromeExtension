@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Guardar marcador</title>
+  <title>Save bookmark</title>
   <script src="../common/theme.js"></script>
   <link rel="stylesheet" href="save.css">
 </head>
@@ -11,33 +11,34 @@
     <header>
       <span id="pageFav"></span>
       <div class="head-text">
-        <h1 id="dlgTitle">Nuevo marcador</h1>
+        <h1 id="dlgTitle" data-i18n="newBookmark">New bookmark</h1>
         <span id="pageUrl"></span>
       </div>
     </header>
 
     <div class="field">
-      <label for="name">Nombre</label>
+      <label for="name" data-i18n="name">Name</label>
       <input id="name" type="text" autocomplete="off" spellcheck="false">
     </div>
 
     <div class="field">
-      <label for="folder">Carpeta</label>
+      <label for="folder" data-i18n="folder">Folder</label>
       <div class="folder-row">
         <select id="folder"></select>
-        <button type="button" id="btnNewFolder" title="Nueva carpeta"></button>
+        <button type="button" id="btnNewFolder" title="New folder" data-i18n-title="newFolder"></button>
       </div>
       <div class="folder-row" id="newFolderRow" hidden>
-        <input id="newFolderName" type="text" placeholder="Nombre de la nueva carpeta" autocomplete="off">
-        <button type="button" id="btnCreateFolder" class="primary">Crear</button>
+        <input id="newFolderName" type="text" placeholder="New folder name" data-i18n-placeholder="folderNamePlaceholder" autocomplete="off">
+        <button type="button" id="btnCreateFolder" class="primary" data-i18n="create">Create</button>
       </div>
     </div>
 
     <footer>
-      <button type="button" id="btnRemove" hidden>Quitar</button>
+      <button type="button" id="btnRemove" data-i18n="remove" hidden>Remove</button>
       <span class="spacer"></span>
-      <button type="button" id="btnCancel">Cancelar</button>
-      <button type="submit" id="btnSave" class="primary">Guardar</button>
+      <button type="button" id="btnLang" class="lang-save"></button>
+      <button type="button" id="btnCancel" data-i18n="cancel">Cancel</button>
+      <button type="submit" id="btnSave" class="primary" data-i18n="save">Save</button>
     </footer>
   </form>
   <script type="module" src="save.js"></script>

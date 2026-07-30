@@ -1,4 +1,6 @@
-// API simulada de chrome.bookmarks para desarrollar la UI fuera de la extensión.
+import { tr } from './i18n.js';
+
+// Simulated chrome.bookmarks API for local UI development.
 // Implementa la misma interfaz que el wrapper real (promesas + eventos).
 
 export function createMockBookmarks() {
@@ -12,7 +14,7 @@ export function createMockBookmarks() {
   const root = {
     id: '0', title: '',
     children: [
-      fd('Barra de marcadores', 900, [
+      fd(tr('Bookmarks bar', 'Barra de marcadores'), 900, [
         bk('GitHub', 'https://github.com', 400),
         bk('YouTube', 'https://www.youtube.com', 380),
         bk('Gmail', 'https://mail.google.com', 500),
@@ -21,35 +23,35 @@ export function createMockBookmarks() {
           bk('Stack Overflow', 'https://stackoverflow.com', 290),
           bk('Can I use…', 'https://caniuse.com', 150),
           bk('npm', 'https://www.npmjs.com', 140),
-          bk('TypeScript: Documentación', 'https://www.typescriptlang.org/docs/', 90),
+          bk(tr('TypeScript: Documentation', 'TypeScript: Documentación'), 'https://www.typescriptlang.org/docs/', 90),
           bk('CSS-Tricks', 'https://css-tricks.com', 60),
           bk('Regex101', 'https://regex101.com', 30),
         ]),
-        fd('Diseño', 250, [
-          bk('Dribbble — Inspiración', 'https://dribbble.com', 220),
+        fd(tr('Design', 'Diseño'), 250, [
+          bk(tr('Dribbble — Inspiration', 'Dribbble — Inspiración'), 'https://dribbble.com', 220),
           bk('Figma', 'https://www.figma.com', 210),
           bk('Coolors — Paletas de colores', 'https://coolors.co', 100),
           bk('Google Fonts', 'https://fonts.google.com', 95),
         ]),
-        fd('Noticias', 200, [
+        fd(tr('News', 'Noticias'), 200, [
           bk('Hacker News', 'https://news.ycombinator.com', 190),
           bk('Reddit — r/programming', 'https://www.reddit.com/r/programming/', 120),
         ]),
       ]),
-      fd('Otros marcadores', 900, [
+      fd(tr('Other bookmarks', 'Otros marcadores'), 900, [
         bk('Netflix', 'https://www.netflix.com', 320),
         bk('Spotify Web', 'https://open.spotify.com', 280),
         bk('Wikipedia', 'https://es.wikipedia.org', 260),
         bk('GitHub', 'https://github.com', 45),
-        bk('Traductor de Google', 'https://translate.google.com', 15),
+        bk(tr('Google Translate', 'Traductor de Google'), 'https://translate.google.com', 15),
         bk('ChatGPT', 'https://chatgpt.com', 10),
         bk('Claude', 'https://claude.ai', 8),
-        fd('Recetas', 180, [
-          bk('Paulina Cocina — Ñoquis caseros', 'https://www.paulinacocina.net/noquis-caseros', 170),
-          bk('Recetas de milanesas al horno', 'https://cookpad.com/ar/buscar/milanesas', 160),
+        fd(tr('Recipes', 'Recetas'), 180, [
+          bk(tr('Paulina Cocina — Homemade gnocchi', 'Paulina Cocina — Ñoquis caseros'), 'https://www.paulinacocina.net/noquis-caseros', 170),
+          bk(tr('Baked milanesa recipes', 'Recetas de milanesas al horno'), 'https://cookpad.com/ar/buscar/milanesas', 160),
           bk('MDN Web Docs — JavaScript', 'https://developer.mozilla.org/es/docs/Web/JavaScript', 5),
         ]),
-        fd('Viajes', 150, [
+        fd(tr('Travel', 'Viajes'), 150, [
           bk('Google Maps', 'https://maps.google.com', 140),
           bk('Booking.com', 'https://www.booking.com', 130),
           fd('Bariloche 2026', 20, [
@@ -104,14 +106,14 @@ export function createMockBookmarks() {
     getTree: async () => [cloneTree(root)],
     getSubTree: async (id) => {
       const r = findNode(id);
-      if (!r) throw new Error('No encontrado');
+      if (!r) throw new Error(tr('Not found', 'No encontrado'));
       const { parent } = r;
       const idx = parent ? parent.children.indexOf(r.node) : null;
       return [cloneTree(r.node, parent, idx)];
     },
     getChildren: async (id) => {
       const r = findNode(id);
-      if (!r || r.node.url) throw new Error('No encontrado');
+      if (!r || r.node.url) throw new Error(tr('Not found', 'No encontrado'));
       return (r.node.children || []).map((c, i) => toResult(c, r.node, i));
     },
     getRecent: async (n) => {
@@ -126,7 +128,7 @@ export function createMockBookmarks() {
     },
     create: async ({ parentId, index, title = '', url }) => {
       const r = findNode(parentId || '2');
-      if (!r || r.node.url) throw new Error('Carpeta inválida');
+      if (!r || r.node.url) throw new Error(tr('Invalid folder', 'Carpeta inválida'));
       const node = { id: String(nextId++), title, dateAdded: Date.now() };
       if (url) node.url = url; else node.children = [];
       const arr = r.node.children;
@@ -137,7 +139,7 @@ export function createMockBookmarks() {
     },
     update: async (id, changes) => {
       const r = findNode(id);
-      if (!r) throw new Error('No encontrado');
+      if (!r) throw new Error(tr('Not found', 'No encontrado'));
       if (changes.title != null) r.node.title = changes.title;
       if (changes.url != null && r.node.url) r.node.url = changes.url;
       emit();
@@ -145,14 +147,14 @@ export function createMockBookmarks() {
     },
     move: async (id, { parentId, index }) => {
       const r = findNode(id);
-      if (!r || !r.parent) throw new Error('No encontrado');
+      if (!r || !r.parent) throw new Error(tr('Not found', 'No encontrado'));
       const destId = parentId || r.parent.id;
       const dest = findNode(destId);
-      if (!dest || dest.node.url) throw new Error('Destino inválido');
+      if (!dest || dest.node.url) throw new Error(tr('Invalid destination', 'Destino inválido'));
       // evitar mover una carpeta dentro de sí misma
       let p = dest.node;
       while (p) {
-        if (p.id === id) throw new Error('Movimiento circular');
+        if (p.id === id) throw new Error(tr('Circular move', 'Movimiento circular'));
         p = findNode(p.id)?.parent;
       }
       const oldArr = r.parent.children;
@@ -165,14 +167,14 @@ export function createMockBookmarks() {
     },
     remove: async (id) => {
       const r = findNode(id);
-      if (!r || !r.parent) throw new Error('No encontrado');
-      if (r.node.children?.length) throw new Error('La carpeta no está vacía');
+      if (!r || !r.parent) throw new Error(tr('Not found', 'No encontrado'));
+      if (r.node.children?.length) throw new Error(tr('The folder is not empty', 'La carpeta no está vacía'));
       r.parent.children.splice(r.parent.children.indexOf(r.node), 1);
       emit();
     },
     removeTree: async (id) => {
       const r = findNode(id);
-      if (!r || !r.parent) throw new Error('No encontrado');
+      if (!r || !r.parent) throw new Error(tr('Not found', 'No encontrado'));
       r.parent.children.splice(r.parent.children.indexOf(r.node), 1);
       emit();
     },

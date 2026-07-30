@@ -1,4 +1,5 @@
 import { createMockBookmarks } from './mock.js';
+import { getLocale, tr } from './i18n.js';
 
 export const IS_EXT = typeof chrome !== 'undefined' && !!chrome.bookmarks && !!chrome.runtime?.id;
 
@@ -78,25 +79,24 @@ export function domainOf(url) {
   try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url || ''; }
 }
 
-const NF = new Intl.NumberFormat('es');
-export const fmtNum = (n) => NF.format(n);
+export const fmtNum = (n) => new Intl.NumberFormat(getLocale()).format(n);
 
-const RTF = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });
 export function timeAgo(ts) {
   if (!ts) return '';
   const diff = (ts - Date.now()) / 1000;
   const abs = Math.abs(diff);
-  if (abs < 60) return 'ahora';
-  if (abs < 3600) return RTF.format(Math.round(diff / 60), 'minute');
-  if (abs < 86400) return RTF.format(Math.round(diff / 3600), 'hour');
-  if (abs < 86400 * 30) return RTF.format(Math.round(diff / 86400), 'day');
-  if (abs < 86400 * 365) return RTF.format(Math.round(diff / (86400 * 30)), 'month');
-  return RTF.format(Math.round(diff / (86400 * 365)), 'year');
+  const rtf = new Intl.RelativeTimeFormat(getLocale(), { numeric: 'auto' });
+  if (abs < 60) return tr('now', 'ahora');
+  if (abs < 3600) return rtf.format(Math.round(diff / 60), 'minute');
+  if (abs < 86400) return rtf.format(Math.round(diff / 3600), 'hour');
+  if (abs < 86400 * 30) return rtf.format(Math.round(diff / 86400), 'day');
+  if (abs < 86400 * 365) return rtf.format(Math.round(diff / (86400 * 30)), 'month');
+  return rtf.format(Math.round(diff / (86400 * 365)), 'year');
 }
 
 export function fullDate(ts) {
   if (!ts) return '';
-  return new Date(ts).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return new Date(ts).toLocaleDateString(getLocale(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 export function debounce(fn, ms) {

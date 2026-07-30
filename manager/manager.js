@@ -3,6 +3,9 @@ import {
   tokenize, searchScore, highlight, faviconEl, loadPref, savePref,
   bm, openUrl, openInWindow, IS_EXT,
 } from '../common/utils.js';
+import {
+  applyI18n, getLang, getLocale, languageButtonText, languageButtonTitle, setLang, tr,
+} from '../common/i18n.js';
 
 // ============ Estado ============
 const state = {
@@ -27,12 +30,12 @@ let rootFolders = [];
 const content = $('#content');
 const searchInput = $('#search');
 
-const SORTS = [
-  { id: 'manual', label: 'Personalizado' },
-  { id: 'title-asc', label: 'Nombre (A → Z)' },
-  { id: 'title-desc', label: 'Nombre (Z → A)' },
-  { id: 'date-new', label: 'Más recientes primero' },
-  { id: 'date-old', label: 'Más antiguos primero' },
+const sorts = () => [
+  { id: 'manual', label: tr('Custom', 'Personalizado') },
+  { id: 'title-asc', label: tr('Name (A → Z)', 'Nombre (A → Z)') },
+  { id: 'title-desc', label: tr('Name (Z → A)', 'Nombre (Z → A)') },
+  { id: 'date-new', label: tr('Newest first', 'Más recientes primero') },
+  { id: 'date-old', label: tr('Oldest first', 'Más antiguos primero') },
 ];
 
 // ============ Datos ============
@@ -115,7 +118,7 @@ function dupeGroups() {
 }
 
 function cmpTitle(a, b) {
-  return (a.title || '').localeCompare(b.title || '', 'es', { sensitivity: 'base' });
+  return (a.title || '').localeCompare(b.title || '', getLocale(), { sensitivity: 'base' });
 }
 
 function sortArr(arr, { fallbackDate = false } = {}) {
@@ -129,7 +132,7 @@ function sortArr(arr, { fallbackDate = false } = {}) {
   return arr;
 }
 
-const errMsg = (err) => 'No se pudo completar: ' + (err?.message || 'error desconocido');
+const errMsg = (err) => tr('Could not complete the action: ', 'No se pudo completar: ') + (err?.message || tr('unknown error', 'error desconocido'));
 
 // ============ Navegación ============
 function setView(v) {
@@ -168,7 +171,7 @@ function renderSidebar() {
   renderViews();
   renderTree();
   const t = countsById.get(tree.id) || { b: 0, f: 0 };
-  $('#stats').textContent = `${fmtNum(t.b)} marcadores · ${fmtNum(Math.max(0, t.f - rootFolders.length))} carpetas`;
+  $('#stats').textContent = `${fmtNum(t.b)} ${tr('bookmarks', 'marcadores')} · ${fmtNum(Math.max(0, t.f - rootFolders.length))} ${tr('folders', 'carpetas')}`;
 }
 
 function renderViews() {
@@ -177,9 +180,9 @@ function renderViews() {
   const total = countsById.get(tree.id) || { b: 0 };
   const extras = dupeGroups().reduce((n, g) => n + g.length - 1, 0);
   const defs = [
-    { id: 'all', label: 'Todos los marcadores', icon: 'bookmark', count: fmtNum(total.b) },
-    { id: 'recent', label: 'Recientes', icon: 'clock' },
-    { id: 'dupes', label: 'Duplicados', icon: 'copy', badge: extras || null },
+    { id: 'all', label: tr('All bookmarks', 'Todos los marcadores'), icon: 'bookmark', count: fmtNum(total.b) },
+    { id: 'recent', label: tr('Recent', 'Recientes'), icon: 'clock' },
+    { id: 'dupes', label: tr('Duplicates', 'Duplicados'), icon: 'copy', badge: extras || null },
   ];
   for (const d of defs) {
     const active = !searching() && state.view.type === d.id;
@@ -206,10 +209,14 @@ function renderTree() {
       dataset: { id: folder.id },
       style: `padding-left:${6 + depth * 14}px`,
     });
-    const twist = el('button', { class: `twist${isOpen ? ' open' : ''}${subs.length ? '' : ' leaf'}`, html: svg('chevron', 13), tabindex: '-1', title: isOpen ? 'Contraer' : 'Expandir' });
+    const twist = el('button', {
+      class: `twist${isOpen ? ' open' : ''}${subs.length ? '' : ' leaf'}`,
+      html: svg('chevron', 13), tabindex: '-1',
+      title: isOpen ? tr('Collapse', 'Contraer') : tr('Expand', 'Expandir'),
+    });
     twist.addEventListener('click', (e) => { e.stopPropagation(); toggleExpand(folder.id); });
     const cnt = countsById.get(folder.id)?.b || 0;
-    const menuBtn = el('button', { class: 'icon-btn sm row-menu', html: svg('more', 14), title: 'Opciones', tabindex: '-1' });
+    const menuBtn = el('button', { class: 'icon-btn sm row-menu', html: svg('more', 14), title: tr('Options', 'Opciones'), tabindex: '-1' });
     menuBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const r = menuBtn.getBoundingClientRect();
@@ -218,7 +225,7 @@ function renderTree() {
     row.append(
       twist,
       el('span', { class: 'icn', html: svg(active ? 'folderOpen' : 'folder', 16) }),
-      el('span', { class: 'label', text: folder.title || 'Sin nombre' }),
+      el('span', { class: 'label', text: folder.title || tr('Untitled', 'Sin nombre') }),
       el('span', { class: 'count', text: cnt ? fmtNum(cnt) : '' }),
       menuBtn,
     );
@@ -273,7 +280,7 @@ function setHead({ crumbs = [], title = '', countText = '', actions = [] }) {
   crumbs.forEach((f, i) => {
     const last = i === crumbs.length - 1;
     if (i > 0) bc.append(el('span', { class: 'sep', html: svg('chevron', 11) }));
-    const c = el(last ? 'span' : 'button', { class: `crumb${last ? ' current' : ''}`, text: f.title || 'Sin nombre' });
+    const c = el(last ? 'span' : 'button', { class: `crumb${last ? ' current' : ''}`, text: f.title || tr('Untitled', 'Sin nombre') });
     if (!last) c.addEventListener('click', () => setView({ type: 'folder', folderId: f.id }));
     bc.append(c);
   });
@@ -304,13 +311,13 @@ function renderFolderView() {
   const c = countsById.get(folder.id) || { b: 0, f: 0 };
   const actions = [];
   if (c.b > 0) {
-    actions.push(btnGhost('external', 'Abrir todos', () => openAll(collectUrls(folder))));
+    actions.push(btnGhost('external', tr('Open all', 'Abrir todos'), () => openAll(collectUrls(folder))));
   }
-  actions.push(btnGhost('folderPlus', 'Nueva carpeta', () => modalFolder(null, { parentId: folder.id })));
+  actions.push(btnGhost('folderPlus', tr('New folder', 'Nueva carpeta'), () => modalFolder(null, { parentId: folder.id })));
   setHead({
     crumbs: [...pathOf(folder), folder],
-    title: folder.title || 'Sin nombre',
-    countText: `${fmtNum(c.b)} ${c.b === 1 ? 'marcador' : 'marcadores'}${c.f ? ` · ${fmtNum(c.f)} ${c.f === 1 ? 'carpeta' : 'carpetas'}` : ''}`,
+    title: folder.title || tr('Untitled', 'Sin nombre'),
+    countText: `${fmtNum(c.b)} ${c.b === 1 ? tr('bookmark', 'marcador') : tr('bookmarks', 'marcadores')}${c.f ? ` · ${fmtNum(c.f)} ${c.f === 1 ? tr('folder', 'carpeta') : tr('folders', 'carpetas')}` : ''}`,
     actions,
   });
   const children = (folder.children || []).slice();
@@ -324,9 +331,9 @@ function renderFolderView() {
   }
   if (!nodes.length) {
     emptyState({
-      icon: 'bookmark', title: 'Esta carpeta está vacía',
-      msg: 'Agrega tu primer marcador o arrastra elementos hasta aquí.',
-      action: { label: 'Nuevo marcador', onClick: () => modalBookmark(null, { parentId: folder.id }) },
+      icon: 'bookmark', title: tr('This folder is empty', 'Esta carpeta está vacía'),
+      msg: tr('Add your first bookmark or drag items here.', 'Agrega tu primer marcador o arrastra elementos hasta aquí.'),
+      action: { label: tr('New bookmark', 'Nuevo marcador'), onClick: () => modalBookmark(null, { parentId: folder.id }) },
     });
     return;
   }
@@ -334,12 +341,15 @@ function renderFolderView() {
 }
 
 function renderAllView() {
-  setHead({ title: 'Todos los marcadores', countText: `${fmtNum(allBookmarks.length)} ${allBookmarks.length === 1 ? 'marcador' : 'marcadores'}` });
+  setHead({
+    title: tr('All bookmarks', 'Todos los marcadores'),
+    countText: `${fmtNum(allBookmarks.length)} ${allBookmarks.length === 1 ? tr('bookmark', 'marcador') : tr('bookmarks', 'marcadores')}`,
+  });
   if (!allBookmarks.length) {
     emptyState({
-      icon: 'bookmark', title: 'Todavía no hay marcadores',
-      msg: 'Guarda tu primera página y va a aparecer acá.',
-      action: { label: 'Nuevo marcador', onClick: () => modalBookmark(null, {}) },
+      icon: 'bookmark', title: tr('No bookmarks yet', 'Todavía no hay marcadores'),
+      msg: tr('Save your first page and it will appear here.', 'Guarda tu primera página y va a aparecer acá.'),
+      action: { label: tr('New bookmark', 'Nuevo marcador'), onClick: () => modalBookmark(null, {}) },
     });
     return;
   }
@@ -348,19 +358,26 @@ function renderAllView() {
 
 function renderRecentView() {
   const sorted = allBookmarks.slice().sort((a, b) => (b.dateAdded || 0) - (a.dateAdded || 0)).slice(0, 150);
-  setHead({ title: 'Recientes', countText: sorted.length ? `Últimos ${fmtNum(sorted.length)} marcadores guardados` : '' });
+  setHead({
+    title: tr('Recent', 'Recientes'),
+    countText: sorted.length ? tr(`${fmtNum(sorted.length)} recently saved bookmarks`, `Últimos ${fmtNum(sorted.length)} marcadores guardados`) : '',
+  });
   if (!sorted.length) {
-    emptyState({ icon: 'clock', title: 'Nada por aquí todavía', msg: 'Los marcadores que guardes van a aparecer acá, del más nuevo al más viejo.' });
+    emptyState({
+      icon: 'clock',
+      title: tr('Nothing here yet', 'Nada por aquí todavía'),
+      msg: tr('Bookmarks you save will appear here, newest first.', 'Los marcadores que guardes van a aparecer acá, del más nuevo al más viejo.'),
+    });
     return;
   }
   const now = new Date();
   const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const buckets = [
-    { label: 'Hoy', test: (t) => t >= startToday },
-    { label: 'Ayer', test: (t) => t >= startToday - 86400000 },
-    { label: 'Últimos 7 días', test: (t) => t >= startToday - 7 * 86400000 },
-    { label: 'Últimos 30 días', test: (t) => t >= startToday - 30 * 86400000 },
-    { label: 'Anteriores', test: () => true },
+    { label: tr('Today', 'Hoy'), test: (t) => t >= startToday },
+    { label: tr('Yesterday', 'Ayer'), test: (t) => t >= startToday - 86400000 },
+    { label: tr('Last 7 days', 'Últimos 7 días'), test: (t) => t >= startToday - 7 * 86400000 },
+    { label: tr('Last 30 days', 'Últimos 30 días'), test: (t) => t >= startToday - 30 * 86400000 },
+    { label: tr('Earlier', 'Anteriores'), test: () => true },
   ];
   const grouped = buckets.map((b) => ({ ...b, items: [] }));
   for (const n of sorted) {
@@ -384,11 +401,18 @@ function renderSearch() {
   results.sort((a, b) => b[0] - a[0] || (b[1].dateAdded || 0) - (a[1].dateAdded || 0));
   const nodes = results.slice(0, 300).map((r) => r[1]);
   setHead({
-    title: 'Resultados',
-    countText: `${fmtNum(results.length)} ${results.length === 1 ? 'resultado' : 'resultados'} para “${state.query.trim()}”`,
+    title: tr('Results', 'Resultados'),
+    countText: tr(
+      `${fmtNum(results.length)} ${results.length === 1 ? 'result' : 'results'} for “${state.query.trim()}”`,
+      `${fmtNum(results.length)} ${results.length === 1 ? 'resultado' : 'resultados'} para “${state.query.trim()}”`,
+    ),
   });
   if (!nodes.length) {
-    emptyState({ icon: 'search', title: 'Sin resultados', msg: 'Prueba con otras palabras o revisa la ortografía.' });
+    emptyState({
+      icon: 'search',
+      title: tr('No results', 'Sin resultados'),
+      msg: tr('Try different words or check the spelling.', 'Prueba con otras palabras o revisa la ortografía.'),
+    });
     return;
   }
   renderLimited(nodes, { tokens, showPath: true });
@@ -399,29 +423,39 @@ function renderDupesView() {
   const extras = groups.reduce((n, g) => n + g.length - 1, 0);
   const actions = [];
   if (groups.length) {
-    const b = el('button', { class: 'btn danger', html: svg('trash', 15) }, ` Limpiar duplicados (${extras})`);
+    const b = el('button', { class: 'btn danger', html: svg('trash', 15) }, tr(` Clean duplicates (${extras})`, ` Limpiar duplicados (${extras})`));
     b.addEventListener('click', async () => {
       const ok = await modalConfirm({
-        title: `¿Eliminar ${extras} ${extras === 1 ? 'duplicado' : 'duplicados'}?`,
-        msg: 'Se conserva el marcador más antiguo de cada grupo. Puedes deshacerlo después.',
-        confirmLabel: 'Limpiar',
+        title: tr(
+          `Remove ${extras} ${extras === 1 ? 'duplicate' : 'duplicates'}?`,
+          `¿Eliminar ${extras} ${extras === 1 ? 'duplicado' : 'duplicados'}?`,
+        ),
+        msg: tr('The oldest bookmark in each group will be kept. You can undo this afterward.', 'Se conserva el marcador más antiguo de cada grupo. Puedes deshacerlo después.'),
+        confirmLabel: tr('Clean', 'Limpiar'),
       });
       if (ok) deleteNodes(groups.flatMap((g) => sortByAge(g).slice(1).map((n) => n.id)), { skipConfirm: true });
     });
     actions.push(b);
   }
   setHead({
-    title: 'Duplicados',
-    countText: groups.length ? `${fmtNum(groups.length)} ${groups.length === 1 ? 'URL repetida' : 'URLs repetidas'} · ${fmtNum(extras)} de más` : '',
+    title: tr('Duplicates', 'Duplicados'),
+    countText: groups.length ? tr(
+      `${fmtNum(groups.length)} ${groups.length === 1 ? 'repeated URL' : 'repeated URLs'} · ${fmtNum(extras)} extra`,
+      `${fmtNum(groups.length)} ${groups.length === 1 ? 'URL repetida' : 'URLs repetidas'} · ${fmtNum(extras)} de más`,
+    ) : '',
     actions,
   });
   if (!groups.length) {
-    emptyState({ icon: 'sparkles', title: '¡Todo limpio!', msg: 'No hay marcadores duplicados en tu colección.' });
+    emptyState({
+      icon: 'sparkles',
+      title: tr('All clean!', '¡Todo limpio!'),
+      msg: tr('There are no duplicate bookmarks in your collection.', 'No hay marcadores duplicados en tu colección.'),
+    });
     return;
   }
   for (const g of groups) {
     const ordered = sortByAge(g);
-    const keepBtn = el('button', { class: 'btn ghost', style: 'height:28px;font-size:12px' }, 'Dejar solo el más antiguo');
+    const keepBtn = el('button', { class: 'btn ghost', style: 'height:28px;font-size:12px' }, tr('Keep only the oldest', 'Dejar solo el más antiguo'));
     keepBtn.addEventListener('click', () => deleteNodes(ordered.slice(1).map((n) => n.id), { skipConfirm: true }));
     const box = el('div', { class: 'dupe-group' },
       el('div', { class: 'dupe-head' },
@@ -446,7 +480,7 @@ function renderLimited(nodes, opts) {
   if (nodes.length > state.limit) {
     const rest = nodes.length - state.limit;
     content.append(el('div', { style: 'display:flex;justify-content:center;padding:18px' },
-      el('button', { class: 'btn', text: `Mostrar ${fmtNum(Math.min(400, rest))} más`, onClick: () => { state.limit += 400; renderContent(); } })));
+      el('button', { class: 'btn', text: tr(`Show ${fmtNum(Math.min(400, rest))} more`, `Mostrar ${fmtNum(Math.min(400, rest))} más`), onClick: () => { state.limit += 400; renderContent(); } })));
   }
 }
 
@@ -476,17 +510,17 @@ function emptyState({ icon: ic, title, msg, action }) {
 
 // ============ Elementos (card / fila) ============
 function selCheckEl() {
-  return el('button', { class: 'sel-check', title: 'Seleccionar', html: svg('check', 13), tabindex: '-1' });
+  return el('button', { class: 'sel-check', title: tr('Select', 'Seleccionar'), html: svg('check', 13), tabindex: '-1' });
 }
 
 function menuBtnEl(cls) {
-  return el('button', { class: cls, html: svg('more', 15), title: 'Opciones', tabindex: '-1' });
+  return el('button', { class: cls, html: svg('more', 15), title: tr('Options', 'Opciones'), tabindex: '-1' });
 }
 
 function pathChip(node) {
-  const parts = pathOf(node).map((f) => f.title || 'Sin nombre');
+  const parts = pathOf(node).map((f) => f.title || tr('Untitled', 'Sin nombre'));
   if (!parts.length) return null;
-  const chip = el('button', { class: 'path-chip', title: 'Ir a la carpeta' },
+  const chip = el('button', { class: 'path-chip', title: tr('Go to folder', 'Ir a la carpeta') },
     el('span', { class: 'icn', html: svg('folder', 11) }),
     el('span', { text: parts.join(' / ') }));
   chip.addEventListener('click', (e) => {
@@ -502,15 +536,15 @@ function cardEl(node, { tokens, showPath } = {}) {
     class: `card${isFolder ? ' is-folder' : ''}`,
     tabindex: '0', role: isFolder ? 'button' : 'link',
     dataset: { id: node.id }, draggable: 'true',
-    title: isFolder ? (node.title || 'Sin nombre') : `${node.title || ''}\n${node.url}`,
+    title: isFolder ? (node.title || tr('Untitled', 'Sin nombre')) : `${node.title || ''}\n${node.url}`,
   });
   const c = isFolder ? (countsById.get(node.id) || { b: 0 }) : null;
   card.append(
     selCheckEl(),
     el('div', { class: 'tile' }, isFolder ? el('span', { class: 'icn', html: svg('folder', 22) }) : faviconEl(node.url, 24)),
     el('div', { class: 'meta' },
-      el('div', { class: 'title', html: highlight(node.title || (isFolder ? 'Sin nombre' : domainOf(node.url)), tokens) }),
-      el('div', { class: 'sub', text: isFolder ? `${fmtNum(c.b)} ${c.b === 1 ? 'marcador' : 'marcadores'}` : domainOf(node.url) }),
+      el('div', { class: 'title', html: highlight(node.title || (isFolder ? tr('Untitled', 'Sin nombre') : domainOf(node.url)), tokens) }),
+      el('div', { class: 'sub', text: isFolder ? `${fmtNum(c.b)} ${c.b === 1 ? tr('bookmark', 'marcador') : tr('bookmarks', 'marcadores')}` : domainOf(node.url) }),
       showPath ? pathChip(node) : null,
     ),
     menuBtnEl('icon-btn card-menu'),
@@ -524,15 +558,15 @@ function rowEl(node, { tokens, showPath } = {}) {
   return el('div', {
     class: 'item-row', tabindex: '0', role: isFolder ? 'button' : 'link',
     dataset: { id: node.id }, draggable: 'true',
-    title: isFolder ? (node.title || 'Sin nombre') : `${node.title || ''}\n${node.url}`,
+    title: isFolder ? (node.title || tr('Untitled', 'Sin nombre')) : `${node.title || ''}\n${node.url}`,
   },
     selCheckEl(),
     isFolder
       ? el('span', { class: 'row-icn', html: svg('folder', 18) })
       : faviconEl(node.url, 18),
-    el('span', { class: 'title', html: highlight(node.title || (isFolder ? 'Sin nombre' : domainOf(node.url)), tokens) }),
+    el('span', { class: 'title', html: highlight(node.title || (isFolder ? tr('Untitled', 'Sin nombre') : domainOf(node.url)), tokens) }),
     showPath ? pathChip(node) : null,
-    el('span', { class: 'domain', text: isFolder ? `${fmtNum(c.b)} ${c.b === 1 ? 'marcador' : 'marcadores'}` : domainOf(node.url) }),
+    el('span', { class: 'domain', text: isFolder ? `${fmtNum(c.b)} ${c.b === 1 ? tr('bookmark', 'marcador') : tr('bookmarks', 'marcadores')}` : domainOf(node.url) }),
     el('span', { class: 'date', text: timeAgo(node.dateAdded), title: fullDate(node.dateAdded) }),
     menuBtnEl('icon-btn sm row-menu'),
   );
@@ -581,15 +615,22 @@ function renderBulkbar() {
   bar.innerHTML = '';
   const nodes = [...state.selection].map((id) => nodeById.get(id)).filter(Boolean);
   const urls = nodes.filter((x) => x.url).map((x) => x.url);
-  const open = btnGhost('external', 'Abrir', () => openAll(urls));
+  const open = btnGhost('external', tr('Open', 'Abrir'), () => openAll(urls));
   if (!urls.length) open.setAttribute('disabled', '');
   bar.append(
-    el('span', { class: 'count', text: `${n} ${n === 1 ? 'seleccionado' : 'seleccionados'}` }),
+    el('span', { class: 'count', text: `${n} ${n === 1 ? tr('selected', 'seleccionado') : tr('selected', 'seleccionados')}` }),
     open,
-    btnGhost('folder', 'Mover', () => modalMove([...state.selection])),
-    btnGhost('copy', 'Copiar', () => copyText(urls.join('\n'), urls.length === 1 ? 'Enlace copiado' : `${urls.length} enlaces copiados`)),
-    (() => { const b = el('button', { class: 'btn danger', html: svg('trash', 15) }, ' Eliminar'); b.addEventListener('click', () => deleteNodes([...state.selection])); return b; })(),
-    el('button', { class: 'icon-btn', html: svg('x', 16), title: 'Deseleccionar (Esc)', onClick: () => clearSelection() }),
+    btnGhost('folder', tr('Move', 'Mover'), () => modalMove([...state.selection])),
+    btnGhost('copy', tr('Copy', 'Copiar'), () => copyText(
+      urls.join('\n'),
+      urls.length === 1 ? tr('Link copied', 'Enlace copiado') : tr(`${urls.length} links copied`, `${urls.length} enlaces copiados`),
+    )),
+    (() => {
+      const b = el('button', { class: 'btn danger', html: svg('trash', 15) }, tr(' Delete', ' Eliminar'));
+      b.addEventListener('click', () => deleteNodes([...state.selection]));
+      return b;
+    })(),
+    el('button', { class: 'icon-btn', html: svg('x', 16), title: tr('Deselect (Esc)', 'Deseleccionar (Esc)'), onClick: () => clearSelection() }),
   );
 }
 
@@ -598,27 +639,27 @@ async function openAll(urls) {
   if (!urls.length) return;
   if (urls.length > 15) {
     const ok = await modalConfirm({
-      title: `¿Abrir ${urls.length} pestañas?`,
-      msg: 'Se van a abrir muchas pestañas a la vez.',
-      confirmLabel: 'Abrir todas',
+      title: tr(`Open ${urls.length} tabs?`, `¿Abrir ${urls.length} pestañas?`),
+      msg: tr('Many tabs will open at once.', 'Se van a abrir muchas pestañas a la vez.'),
+      confirmLabel: tr('Open all', 'Abrir todas'),
       danger: false,
     });
     if (!ok) return;
   }
   urls.forEach((u) => openUrl(u, { active: false }));
-  toast(`${urls.length} ${urls.length === 1 ? 'pestaña abierta' : 'pestañas abiertas'}`, { icon: 'external' });
+  toast(`${urls.length} ${urls.length === 1 ? tr('tab opened', 'pestaña abierta') : tr('tabs opened', 'pestañas abiertas')}`, { icon: 'external' });
 }
 
 async function copyText(text, msg) {
   try { await navigator.clipboard.writeText(text); toast(msg, { icon: 'copy' }); }
-  catch { toast('No se pudo copiar al portapapeles', { kind: 'err', icon: 'alert' }); }
+  catch { toast(tr('Could not copy to the clipboard', 'No se pudo copiar al portapapeles'), { kind: 'err', icon: 'alert' }); }
 }
 
 async function moveNodesTo(ids, parentId, index) {
   const list = topLevelOnly(ids.filter((id) => nodeById.has(id)));
   if (!list.length) return;
   if (list.some((id) => isRootFolder(nodeById.get(id)))) {
-    toast('Las carpetas principales no se pueden mover', { kind: 'err', icon: 'alert' });
+    toast(tr('Top-level folders cannot be moved', 'Las carpetas principales no se pueden mover'), { kind: 'err', icon: 'alert' });
     return;
   }
   const records = list.map((id) => {
@@ -638,8 +679,11 @@ async function moveNodesTo(ids, parentId, index) {
   clearSelection({ silent: true });
   if (!sameParentReorder || records.some((r) => r.parentId !== parentId)) {
     const dest = nodeById.get(parentId);
-    toast(`${list.length === 1 ? 'Movido' : `${list.length} elementos movidos`} a “${dest?.title || 'carpeta'}”`, {
-      icon: 'folder', actionLabel: 'Deshacer', onAction: () => undoMoves(records),
+    toast(tr(
+      `${list.length === 1 ? 'Moved' : `${list.length} items moved`} to “${dest?.title || 'folder'}”`,
+      `${list.length === 1 ? 'Movido' : `${list.length} elementos movidos`} a “${dest?.title || 'carpeta'}”`,
+    ), {
+      icon: 'folder', actionLabel: tr('Undo', 'Deshacer'), onAction: () => undoMoves(records),
     });
   }
 }
@@ -655,7 +699,7 @@ async function deleteNodes(ids, { skipConfirm = false } = {}) {
   const list = topLevelOnly(ids.filter((id) => nodeById.has(id)));
   if (!list.length) return;
   if (list.some((id) => isRootFolder(nodeById.get(id)))) {
-    toast('Las carpetas principales no se pueden eliminar', { kind: 'err', icon: 'alert' });
+    toast(tr('Top-level folders cannot be deleted', 'Las carpetas principales no se pueden eliminar'), { kind: 'err', icon: 'alert' });
     return;
   }
   const folders = list.filter((id) => !nodeById.get(id).url);
@@ -663,11 +707,17 @@ async function deleteNodes(ids, { skipConfirm = false } = {}) {
     const inside = folders.reduce((n, id) => n + (countsById.get(id)?.b || 0), 0);
     const single = list.length === 1 && folders.length === 1;
     const ok = await modalConfirm({
-      title: single ? `¿Eliminar la carpeta “${nodeById.get(folders[0]).title || 'Sin nombre'}”?` : `¿Eliminar ${list.length} elementos?`,
+      title: tr(
+        single ? `Delete the folder “${nodeById.get(folders[0]).title || 'Untitled'}”?` : `Delete ${list.length} items?`,
+        single ? `¿Eliminar la carpeta “${nodeById.get(folders[0]).title || 'Sin nombre'}”?` : `¿Eliminar ${list.length} elementos?`,
+      ),
       msg: inside
-        ? `También se ${inside === 1 ? 'eliminará 1 marcador guardado' : `eliminarán ${fmtNum(inside)} marcadores guardados`} adentro. Vas a poder deshacerlo.`
-        : 'Vas a poder deshacerlo desde el aviso.',
-      confirmLabel: 'Eliminar',
+        ? tr(
+          `${inside === 1 ? '1 saved bookmark' : `${fmtNum(inside)} saved bookmarks`} inside will also be deleted. You can undo this.`,
+          `También se ${inside === 1 ? 'eliminará 1 marcador guardado' : `eliminarán ${fmtNum(inside)} marcadores guardados`} adentro. Vas a poder deshacerlo.`,
+        )
+        : tr('You can undo this from the notification.', 'Vas a poder deshacerlo desde el aviso.'),
+      confirmLabel: tr('Delete', 'Eliminar'),
     });
     if (!ok) return;
   }
@@ -688,15 +738,18 @@ async function deleteNodes(ids, { skipConfirm = false } = {}) {
     return;
   }
   clearSelection({ silent: true });
-  toast(list.length === 1 ? 'Eliminado' : `${list.length} elementos eliminados`, {
-    icon: 'trash', kind: 'info', actionLabel: 'Deshacer', onAction: () => restoreRecords(records),
-  });
+  toast(
+    list.length === 1 ? tr('Deleted', 'Eliminado') : tr(`${list.length} items deleted`, `${list.length} elementos eliminados`),
+    {
+      icon: 'trash', kind: 'info', actionLabel: tr('Undo', 'Deshacer'), onAction: () => restoreRecords(records),
+    },
+  );
 }
 
 async function restoreRecords(records) {
   try {
     for (const r of records) await recreate(r.sub, r.parentId, r.index);
-    toast('Restaurado', { icon: 'undo' });
+    toast(tr('Restored', 'Restaurado'), { icon: 'undo' });
   } catch (err) { toast(errMsg(err), { kind: 'err', icon: 'alert' }); }
 }
 
@@ -830,15 +883,15 @@ function hideMenu() {
 
 function bookmarkMenuItems(node) {
   return [
-    { label: 'Abrir en pestaña nueva', icon: 'external', onClick: () => openUrl(node.url) },
-    { label: 'Abrir en segundo plano', icon: 'arrowUpRight', onClick: () => openUrl(node.url, { active: false }) },
-    { label: 'Abrir en ventana nueva', icon: 'window', onClick: () => openInWindow(node.url) },
+    { label: tr('Open in new tab', 'Abrir en pestaña nueva'), icon: 'external', onClick: () => openUrl(node.url) },
+    { label: tr('Open in background', 'Abrir en segundo plano'), icon: 'arrowUpRight', onClick: () => openUrl(node.url, { active: false }) },
+    { label: tr('Open in new window', 'Abrir en ventana nueva'), icon: 'window', onClick: () => openInWindow(node.url) },
     '-',
-    { label: 'Editar', icon: 'pen', hint: 'F2', onClick: () => modalBookmark(node) },
-    { label: 'Copiar enlace', icon: 'copy', onClick: () => copyText(node.url, 'Enlace copiado') },
-    { label: 'Mover a…', icon: 'folder', onClick: () => modalMove([node.id]) },
+    { label: tr('Edit', 'Editar'), icon: 'pen', hint: 'F2', onClick: () => modalBookmark(node) },
+    { label: tr('Copy link', 'Copiar enlace'), icon: 'copy', onClick: () => copyText(node.url, tr('Link copied', 'Enlace copiado')) },
+    { label: tr('Move to…', 'Mover a…'), icon: 'folder', onClick: () => modalMove([node.id]) },
     '-',
-    { label: 'Eliminar', icon: 'trash', danger: true, hint: 'Supr', onClick: () => deleteNodes([node.id]) },
+    { label: tr('Delete', 'Eliminar'), icon: 'trash', danger: true, hint: tr('Del', 'Supr'), onClick: () => deleteNodes([node.id]) },
   ];
 }
 
@@ -846,16 +899,16 @@ function folderMenuItems(node) {
   const isRoot = isRootFolder(node);
   const c = countsById.get(node.id) || { b: 0 };
   return [
-    { label: 'Abrir carpeta', icon: 'folderOpen', onClick: () => setView({ type: 'folder', folderId: node.id }) },
-    { label: `Abrir todos (${fmtNum(c.b)})`, icon: 'external', disabled: !c.b, onClick: () => openAll(collectUrls(node)) },
+    { label: tr('Open folder', 'Abrir carpeta'), icon: 'folderOpen', onClick: () => setView({ type: 'folder', folderId: node.id }) },
+    { label: tr(`Open all (${fmtNum(c.b)})`, `Abrir todos (${fmtNum(c.b)})`), icon: 'external', disabled: !c.b, onClick: () => openAll(collectUrls(node)) },
     '-',
-    { label: 'Nuevo marcador', icon: 'plus', onClick: () => modalBookmark(null, { parentId: node.id }) },
-    { label: 'Nueva subcarpeta', icon: 'folderPlus', onClick: () => modalFolder(null, { parentId: node.id }) },
+    { label: tr('New bookmark', 'Nuevo marcador'), icon: 'plus', onClick: () => modalBookmark(null, { parentId: node.id }) },
+    { label: tr('New subfolder', 'Nueva subcarpeta'), icon: 'folderPlus', onClick: () => modalFolder(null, { parentId: node.id }) },
     '-',
-    { label: 'Renombrar', icon: 'pen', disabled: isRoot, hint: 'F2', onClick: () => modalFolder(node) },
-    { label: 'Mover a…', icon: 'folder', disabled: isRoot, onClick: () => modalMove([node.id]) },
+    { label: tr('Rename', 'Renombrar'), icon: 'pen', disabled: isRoot, hint: 'F2', onClick: () => modalFolder(node) },
+    { label: tr('Move to…', 'Mover a…'), icon: 'folder', disabled: isRoot, onClick: () => modalMove([node.id]) },
     '-',
-    { label: 'Eliminar', icon: 'trash', danger: true, disabled: isRoot, hint: 'Supr', onClick: () => deleteNodes([node.id]) },
+    { label: tr('Delete', 'Eliminar'), icon: 'trash', danger: true, disabled: isRoot, hint: tr('Del', 'Supr'), onClick: () => deleteNodes([node.id]) },
   ];
 }
 
@@ -863,13 +916,13 @@ function multiMenuItems() {
   const ids = [...state.selection];
   const urls = ids.map((id) => nodeById.get(id)).filter((n) => n?.url).map((n) => n.url);
   return [
-    { title: `${ids.length} seleccionados` },
-    { label: 'Abrir todos', icon: 'external', disabled: !urls.length, onClick: () => openAll(urls) },
-    { label: 'Mover a…', icon: 'folder', onClick: () => modalMove(ids) },
-    { label: 'Copiar enlaces', icon: 'copy', disabled: !urls.length, onClick: () => copyText(urls.join('\n'), `${urls.length} enlaces copiados`) },
+    { title: tr(`${ids.length} selected`, `${ids.length} seleccionados`) },
+    { label: tr('Open all', 'Abrir todos'), icon: 'external', disabled: !urls.length, onClick: () => openAll(urls) },
+    { label: tr('Move to…', 'Mover a…'), icon: 'folder', onClick: () => modalMove(ids) },
+    { label: tr('Copy links', 'Copiar enlaces'), icon: 'copy', disabled: !urls.length, onClick: () => copyText(urls.join('\n'), tr(`${urls.length} links copied`, `${urls.length} enlaces copiados`)) },
     '-',
-    { label: 'Eliminar', icon: 'trash', danger: true, onClick: () => deleteNodes(ids) },
-    { label: 'Deseleccionar', icon: 'x', hint: 'Esc', onClick: () => clearSelection() },
+    { label: tr('Delete', 'Eliminar'), icon: 'trash', danger: true, onClick: () => deleteNodes(ids) },
+    { label: tr('Deselect', 'Deseleccionar'), icon: 'x', hint: 'Esc', onClick: () => clearSelection() },
   ];
 }
 
@@ -881,10 +934,10 @@ function itemMenuItems(node) {
 function backgroundMenuItems() {
   const parentId = state.view.folderId;
   return [
-    { label: 'Nuevo marcador', icon: 'plus', onClick: () => modalBookmark(null, { parentId }) },
-    { label: 'Nueva carpeta', icon: 'folderPlus', onClick: () => modalFolder(null, { parentId }) },
+    { label: tr('New bookmark', 'Nuevo marcador'), icon: 'plus', onClick: () => modalBookmark(null, { parentId }) },
+    { label: tr('New folder', 'Nueva carpeta'), icon: 'folderPlus', onClick: () => modalFolder(null, { parentId }) },
     '-',
-    { label: 'Seleccionar todo', icon: 'check', hint: 'Ctrl+A', onClick: selectAll },
+    { label: tr('Select all', 'Seleccionar todo'), icon: 'check', hint: 'Ctrl+A', onClick: selectAll },
   ];
 }
 
@@ -911,10 +964,10 @@ function openModal({ title, submitLabel, danger = false, build, onSubmit, onClos
   form.append(
     el('div', { class: 'modal-head' },
       el('h2', { text: title }),
-      el('button', { type: 'button', class: 'icon-btn', html: svg('x', 16), title: 'Cerrar (Esc)', onClick: close })),
+      el('button', { type: 'button', class: 'icon-btn', html: svg('x', 16), title: tr('Close (Esc)', 'Cerrar (Esc)'), onClick: close })),
     body,
     el('div', { class: 'modal-foot' },
-      el('button', { type: 'button', class: 'btn', text: 'Cancelar', onClick: close }),
+      el('button', { type: 'button', class: 'btn', text: tr('Cancel', 'Cancelar'), onClick: close }),
       submitLabel ? el('button', { type: 'submit', class: `btn ${danger ? 'danger' : 'primary'}`, text: submitLabel }) : null),
   );
   form.addEventListener('submit', async (e) => {
@@ -954,7 +1007,7 @@ function folderSelect(selectedId, { excludeIds = [] } = {}) {
   (function walkF(nodes, depth) {
     for (const n of nodes) {
       if (n.url || ex.has(n.id)) continue;
-      sel.append(el('option', { value: n.id, text: '   '.repeat(depth) + (n.title || 'Sin nombre') }));
+      sel.append(el('option', { value: n.id, text: '   '.repeat(depth) + (n.title || tr('Untitled', 'Sin nombre')) }));
       walkF(n.children || [], depth + 1);
     }
   })(rootFolders, 0);
@@ -966,18 +1019,18 @@ function modalBookmark(node, { parentId } = {}) {
   const isEdit = !!node;
   let nameI, urlI, folderS, urlField;
   openModal({
-    title: isEdit ? 'Editar marcador' : 'Nuevo marcador',
-    submitLabel: isEdit ? 'Guardar' : 'Agregar',
+    title: isEdit ? tr('Edit bookmark', 'Editar marcador') : tr('New bookmark', 'Nuevo marcador'),
+    submitLabel: isEdit ? tr('Save', 'Guardar') : tr('Add', 'Agregar'),
     build(body) {
-      nameI = el('input', { type: 'text', value: node?.title ?? '', placeholder: 'Nombre del marcador' });
-      urlI = el('input', { type: 'text', value: node?.url ?? '', placeholder: 'https://ejemplo.com', spellcheck: 'false' });
+      nameI = el('input', { type: 'text', value: node?.title ?? '', placeholder: tr('Bookmark name', 'Nombre del marcador') });
+      urlI = el('input', { type: 'text', value: node?.url ?? '', placeholder: 'https://example.com', spellcheck: 'false' });
       urlI.addEventListener('input', () => urlField.classList.remove('invalid'));
       folderS = folderSelect(isEdit ? node.parentId : (parentId ?? currentFolderId()));
-      urlField = el('div', { class: 'field' }, el('label', { text: 'URL' }), urlI, el('span', { class: 'err', text: 'Ingresa una dirección válida' }));
+      urlField = el('div', { class: 'field' }, el('label', { text: 'URL' }), urlI, el('span', { class: 'err', text: tr('Enter a valid address', 'Ingresa una dirección válida') }));
       body.append(
-        el('div', { class: 'field' }, el('label', { text: 'Nombre' }), nameI),
+        el('div', { class: 'field' }, el('label', { text: tr('Name', 'Nombre') }), nameI),
         urlField,
-        el('div', { class: 'field' }, el('label', { text: 'Carpeta' }), folderS),
+        el('div', { class: 'field' }, el('label', { text: tr('Folder', 'Carpeta') }), folderS),
       );
     },
     async onSubmit() {
@@ -988,10 +1041,10 @@ function modalBookmark(node, { parentId } = {}) {
         if (isEdit) {
           await bm.update(node.id, { title, url });
           if (folderS.value !== node.parentId) await bm.move(node.id, { parentId: folderS.value });
-          toast('Marcador actualizado', { icon: 'check' });
+          toast(tr('Bookmark updated', 'Marcador actualizado'), { icon: 'check' });
         } else {
           await bm.create({ parentId: folderS.value, title, url });
-          toast('Marcador agregado', { icon: 'bookmark' });
+          toast(tr('Bookmark added', 'Marcador agregado'), { icon: 'bookmark' });
         }
       } catch (err) { toast(errMsg(err), { kind: 'err', icon: 'alert' }); }
     },
@@ -1002,28 +1055,28 @@ function modalFolder(node, { parentId } = {}) {
   const isEdit = !!node;
   let nameI, parentS, nameField;
   openModal({
-    title: isEdit ? 'Renombrar carpeta' : 'Nueva carpeta',
-    submitLabel: isEdit ? 'Guardar' : 'Crear',
+    title: isEdit ? tr('Rename folder', 'Renombrar carpeta') : tr('New folder', 'Nueva carpeta'),
+    submitLabel: isEdit ? tr('Save', 'Guardar') : tr('Create', 'Crear'),
     build(body) {
-      nameI = el('input', { type: 'text', value: node?.title ?? '', placeholder: 'Nombre de la carpeta' });
+      nameI = el('input', { type: 'text', value: node?.title ?? '', placeholder: tr('Folder name', 'Nombre de la carpeta') });
       nameI.addEventListener('input', () => nameField.classList.remove('invalid'));
-      nameField = el('div', { class: 'field' }, el('label', { text: 'Nombre' }), nameI, el('span', { class: 'err', text: 'Escribe un nombre' }));
+      nameField = el('div', { class: 'field' }, el('label', { text: tr('Name', 'Nombre') }), nameI, el('span', { class: 'err', text: tr('Enter a name', 'Escribe un nombre') }));
       body.append(nameField);
       if (!isEdit) {
         parentS = folderSelect(parentId ?? currentFolderId());
-        body.append(el('div', { class: 'field' }, el('label', { text: 'Dentro de' }), parentS));
+        body.append(el('div', { class: 'field' }, el('label', { text: tr('Inside', 'Dentro de') }), parentS));
       }
     },
     async onSubmit() {
       const title = nameI.value.trim();
       if (!title) { nameField.classList.add('invalid'); nameI.focus(); return false; }
       try {
-        if (isEdit) { await bm.update(node.id, { title }); toast('Carpeta renombrada', { icon: 'check' }); }
+        if (isEdit) { await bm.update(node.id, { title }); toast(tr('Folder renamed', 'Carpeta renombrada'), { icon: 'check' }); }
         else {
           const created = await bm.create({ parentId: parentS.value, title });
           state.expanded.add(parentS.value);
           savePref('mp-expanded', [...state.expanded]);
-          toast('Carpeta creada', { icon: 'folderPlus', actionLabel: 'Abrir', onAction: () => setView({ type: 'folder', folderId: created.id }) });
+          toast(tr('Folder created', 'Carpeta creada'), { icon: 'folderPlus', actionLabel: tr('Open', 'Abrir'), onAction: () => setView({ type: 'folder', folderId: created.id }) });
         }
       } catch (err) { toast(errMsg(err), { kind: 'err', icon: 'alert' }); }
     },
@@ -1045,8 +1098,11 @@ function modalMove(ids) {
   const single = list.length === 1 ? nodeById.get(list[0]) : null;
 
   openModal({
-    title: single ? `Mover “${single.title || 'Sin nombre'}”` : `Mover ${list.length} elementos`,
-    submitLabel: 'Mover acá',
+    title: tr(
+      single ? `Move “${single.title || 'Untitled'}”` : `Move ${list.length} items`,
+      single ? `Mover “${single.title || 'Sin nombre'}”` : `Mover ${list.length} elementos`,
+    ),
+    submitLabel: tr('Move here', 'Mover acá'),
     build(body) {
       const pickWrap = el('div', { class: 'folder-pick' });
       const render = () => {
@@ -1066,7 +1122,7 @@ function modalMove(ids) {
             if (localExpanded.has(folder.id)) localExpanded.delete(folder.id); else localExpanded.add(folder.id);
             render();
           });
-          row.append(twist, el('span', { class: 'icn', html: svg('folder', 15) }), el('span', { class: 'label', text: folder.title || 'Sin nombre' }));
+          row.append(twist, el('span', { class: 'icn', html: svg('folder', 15) }), el('span', { class: 'label', text: folder.title || tr('Untitled', 'Sin nombre') }));
           row.addEventListener('click', () => {
             picked = folder.id;
             pickedRow?.classList.remove('picked');
@@ -1079,16 +1135,16 @@ function modalMove(ids) {
         for (const r of rootFolders) build(r, 0);
       };
       render();
-      body.append(el('p', { class: 'msg', text: 'Elige la carpeta de destino:' }), pickWrap);
+      body.append(el('p', { class: 'msg', text: tr('Choose the destination folder:', 'Elige la carpeta de destino:') }), pickWrap);
     },
     async onSubmit() {
-      if (!picked) { toast('Elige una carpeta de destino', { kind: 'info', icon: 'info' }); return false; }
+      if (!picked) { toast(tr('Choose a destination folder', 'Elige una carpeta de destino'), { kind: 'info', icon: 'info' }); return false; }
       await moveNodesTo(list, picked, null);
     },
   });
 }
 
-function modalConfirm({ title, msg, confirmLabel = 'Eliminar', danger = true }) {
+function modalConfirm({ title, msg, confirmLabel = tr('Delete', 'Eliminar'), danger = true }) {
   return new Promise((resolve) => {
     openModal({
       title, submitLabel: confirmLabel, danger,
@@ -1252,15 +1308,16 @@ window.addEventListener('resize', hideMenu);
 // ============ Topbar ============
 function applyLayoutBtn() {
   $('#btnLayout').innerHTML = svg(state.layout === 'grid' ? 'list' : 'grid', 17);
-  $('#btnLayout').title = state.layout === 'grid' ? 'Ver como lista' : 'Ver como cuadrícula';
+  $('#btnLayout').title = state.layout === 'grid' ? tr('View as list', 'Ver como lista') : tr('View as grid', 'Ver como cuadrícula');
 }
 function applyThemeBtn() {
   const dark = document.documentElement.dataset.theme === 'dark';
   $('#btnTheme').innerHTML = svg(dark ? 'sun' : 'moon', 17);
-  $('#btnTheme').title = dark ? 'Tema claro' : 'Tema oscuro';
+  $('#btnTheme').title = dark ? tr('Light theme', 'Tema claro') : tr('Dark theme', 'Tema oscuro');
 }
 function applySortBtn() {
-  const cur = SORTS.find((s) => s.id === state.sort) || SORTS[0];
+  const options = sorts();
+  const cur = options.find((s) => s.id === state.sort) || options[0];
   const b = $('#btnSort');
   b.innerHTML = `${svg('sort', 15)}<span>${cur.label}</span>${svg('chevron', 12)}`;
   b.querySelector('svg:last-child').style.transform = 'rotate(90deg)';
@@ -1282,7 +1339,7 @@ $('#btnTheme').addEventListener('click', () => {
 
 $('#btnSort').addEventListener('click', () => {
   const r = $('#btnSort').getBoundingClientRect();
-  showMenu(r.left, r.bottom + 6, SORTS.map((s) => ({
+  showMenu(r.left, r.bottom + 6, sorts().map((s) => ({
     label: s.label,
     icon: s.id === state.sort ? 'check' : 'sort',
     checked: false,
@@ -1298,8 +1355,8 @@ $('#btnSort').addEventListener('click', () => {
 $('#btnAdd').addEventListener('click', () => {
   const r = $('#btnAdd').getBoundingClientRect();
   showMenu(r.right - 210, r.bottom + 6, [
-    { label: 'Nuevo marcador', icon: 'plus', onClick: () => modalBookmark(null, {}) },
-    { label: 'Nueva carpeta', icon: 'folderPlus', onClick: () => modalFolder(null, {}) },
+    { label: tr('New bookmark', 'Nuevo marcador'), icon: 'plus', onClick: () => modalBookmark(null, {}) },
+    { label: tr('New folder', 'Nueva carpeta'), icon: 'folderPlus', onClick: () => modalFolder(null, {}) },
   ]);
 });
 
@@ -1326,18 +1383,31 @@ function renderTip() {
   tip.hidden = false;
   tip.append(
     el('span', { class: 'icn', html: svg('sparkles', 16) }),
-    el('span', { html: 'Consejo: <kbd>Ctrl</kbd> <kbd>K</kbd> para buscar al instante, arrastra para organizar y clic derecho para ver todas las opciones.' }),
-    el('button', { class: 'icon-btn', html: svg('x', 14), title: 'Cerrar', onClick: () => { tip.hidden = true; state.tipDismissed = true; savePref('mp-tip-dismissed', true); } }),
+    el('span', {
+      html: tr(
+        'Tip: press <kbd>Ctrl</kbd> <kbd>K</kbd> to search instantly, drag to organize, and right-click for every action.',
+        'Consejo: <kbd>Ctrl</kbd> <kbd>K</kbd> para buscar al instante, arrastra para organizar y clic derecho para ver todas las opciones.',
+      ),
+    }),
+    el('button', { class: 'icon-btn', html: svg('x', 14), title: tr('Close', 'Cerrar'), onClick: () => { tip.hidden = true; state.tipDismissed = true; savePref('mp-tip-dismissed', true); } }),
   );
 }
 
 // ============ Init ============
 async function init() {
+  applyI18n();
   $('#btnSidebar').innerHTML = svg('menu', 18);
   $('#btnTreeNewFolder').innerHTML = svg('plus', 14);
   $('#btnClearSearch').innerHTML = svg('x', 14);
   $('#searchWrap .search-icn').innerHTML = svg('search', 16);
-  $('#btnAdd').innerHTML = `${svg('plus', 16)}<span>Agregar</span>`;
+  $('#btnAdd').innerHTML = `${svg('plus', 16)}<span>${tr('Add', 'Agregar')}</span>`;
+  const langBtn = $('#btnLang');
+  langBtn.textContent = languageButtonText();
+  langBtn.title = languageButtonTitle();
+  langBtn.addEventListener('click', () => {
+    setLang(getLang() === 'en' ? 'es' : 'en');
+    location.reload();
+  });
   applyLayoutBtn();
   applyThemeBtn();
   applySortBtn();

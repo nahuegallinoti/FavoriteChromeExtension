@@ -1,7 +1,8 @@
 import { $, el, svg, faviconEl, domainOf, bm, IS_EXT } from '../common/utils.js';
+import { applyI18n, getLang, languageButtonText, languageButtonTitle, setLang, tr } from '../common/i18n.js';
 
 const params = new URLSearchParams(location.search);
-const pageUrl = params.get('url') || 'https://ejemplo.dev/articulo';
+const pageUrl = params.get('url') || 'https://example.dev/article';
 const pageTitle = params.get('title') || '';
 const tabId = Number(params.get('tabId')) || null;
 
@@ -25,7 +26,7 @@ function fillFolders(selectedId) {
   (function walk(nodes, depth) {
     for (const n of nodes) {
       if (n.url) continue;
-      folderS.append(el('option', { value: n.id, text: '   '.repeat(depth) + (n.title || 'Sin nombre') }));
+      folderS.append(el('option', { value: n.id, text: '   '.repeat(depth) + (n.title || tr('Untitled', 'Sin nombre')) }));
       walk(n.children || [], depth + 1);
     }
   })(rootFolders, 0);
@@ -44,6 +45,7 @@ function done() {
 }
 
 async function init() {
+  applyI18n();
   $('#btnNewFolder').innerHTML = svg('folderPlus', 16);
   $('#pageFav').append(faviconEl(pageUrl, 20));
   $('#pageUrl').textContent = pageUrl;
@@ -55,8 +57,8 @@ async function init() {
 
   let selected;
   if (existing) {
-    document.title = 'Editar marcador';
-    $('#dlgTitle').textContent = 'Editar marcador';
+    document.title = tr('Edit bookmark', 'Editar marcador');
+    $('#dlgTitle').textContent = tr('Edit bookmark', 'Editar marcador');
     $('#btnRemove').hidden = false;
     nameI.value = existing.title || '';
     selected = existing.parentId;
@@ -71,6 +73,14 @@ async function init() {
 
   nameI.focus();
   nameI.select();
+
+  const lb = $('#btnLang');
+  lb.textContent = languageButtonText();
+  lb.title = languageButtonTitle();
+  lb.addEventListener('click', () => {
+    setLang(getLang() === 'en' ? 'es' : 'en');
+    location.reload();
+  });
 }
 
 $('#form').addEventListener('submit', async (e) => {

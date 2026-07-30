@@ -1,6 +1,6 @@
-# Marcadores Pro
+# Mark My Tabs
 
-Administrador de marcadores para Chrome: rápido, elegante y fácil de usar. Reemplaza al administrador nativo con búsqueda instantánea, organización con arrastrar y soltar, detección de duplicados y modo oscuro.
+Administrador de marcadores para Chrome: rápido, elegante y fácil de usar. El nombre juega con la expresión inglesa “mark my words”. Reemplaza al administrador nativo con búsqueda instantánea, organización con arrastrar y soltar, detección de duplicados, modo oscuro e interfaz bilingüe.
 
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-blue) ![Sin dependencias](https://img.shields.io/badge/dependencias-0-green)
 
@@ -22,6 +22,7 @@ Administrador de marcadores para Chrome: rápido, elegante y fácil de usar. Ree
 - **Selección múltiple** (Ctrl+clic, Shift+clic, Ctrl+A) con barra de acciones: abrir, mover, copiar enlaces, eliminar.
 - **Deshacer** cualquier eliminación o movimiento desde el aviso.
 - **Tema claro/oscuro** (detecta el del sistema, se puede alternar).
+- **English / Español**: cambia el idioma al instante desde el administrador, el popup o la ventana de guardado.
 - Todo editable: crear/editar marcadores y carpetas, con validación de URL.
 
 ### Popup (clic en el ícono)
