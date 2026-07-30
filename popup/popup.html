@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Marcadores Pro</title>
+  <script src="../common/theme.js"></script>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="searchBar">
+    <span class="search-icn"></span>
+    <input id="search" type="text" placeholder="Buscar marcadores…" autocomplete="off" spellcheck="false" autofocus>
+  </div>
+
+  <div id="body">
+    <div id="currentPage" hidden></div>
+    <div id="results"></div>
+  </div>
+
+  <footer>
+    <span id="total"></span>
+    <span class="foot-actions">
+      <button id="btnCollapse" class="icon-mini" title="Contraer carpetas"></button>
+      <button id="btnManager" class="btn-open"></button>
+    </span>
+  </footer>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

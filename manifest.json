@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Marcadores Pro",
+  "version": "1.0.0",
+  "description": "Administrador de marcadores rápido y elegante: busca, organiza, arrastra y limpia tus marcadores.",
+  "minimum_chrome_version": "114",
+  "permissions": ["bookmarks", "favicon", "storage", "activeTab"],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Marcadores Pro",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "commands": {
+    "open-manager": {
+      "suggested_key": { "default": "Alt+B" },
+      "description": "Abrir el administrador de marcadores"
+    },
+    "save-current": {
+      "suggested_key": { "default": "Alt+M" },
+      "description": "Guardar o quitar la pestaña actual de marcadores"
+    }
+  }
+}

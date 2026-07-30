@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Guardar marcador</title>
+  <script src="../common/theme.js"></script>
+  <link rel="stylesheet" href="save.css">
+</head>
+<body>
+  <form id="form">
+    <header>
+      <span id="pageFav"></span>
+      <div class="head-text">
+        <h1 id="dlgTitle">Nuevo marcador</h1>
+        <span id="pageUrl"></span>
+      </div>
+    </header>
+
+    <div class="field">
+      <label for="name">Nombre</label>
+      <input id="name" type="text" autocomplete="off" spellcheck="false">
+    </div>
+
+    <div class="field">
+      <label for="folder">Carpeta</label>
+      <div class="folder-row">
+        <select id="folder"></select>
+        <button type="button" id="btnNewFolder" title="Nueva carpeta"></button>
+      </div>
+      <div class="folder-row" id="newFolderRow" hidden>
+        <input id="newFolderName" type="text" placeholder="Nombre de la nueva carpeta" autocomplete="off">
+        <button type="button" id="btnCreateFolder" class="primary">Crear</button>
+      </div>
+    </div>
+
+    <footer>
+      <button type="button" id="btnRemove" hidden>Quitar</button>
+      <span class="spacer"></span>
+      <button type="button" id="btnCancel">Cancelar</button>
+      <button type="submit" id="btnSave" class="primary">Guardar</button>
+    </footer>
+  </form>
+  <script type="module" src="save.js"></script>
+</body>
+</html>
