@@ -78,3 +78,7 @@ y abre `http://localhost:5173`. Fuera de Chrome-extensión, la app usa datos sim
 - `activeTab` — leer título y URL de la pestaña activa solo cuando usas la extensión (atajo `Alt+M` o el popup).
 
 Nada sale de tu navegador: sin analytics, sin servidores, sin cuentas.
+
+## Privacidad
+
+Consulta la [política de privacidad de Mark My Tabs](https://nahuegallinoti.github.io/MarkMyTabs/privacy-policy/).
